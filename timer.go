@@ -16,15 +16,15 @@ type defaultTimer struct {
 	timer *time.Timer
 }
 
-func (t *defaultTimer) C() <-chan time.Time {
+func (t *defaultTimer) Wait() <-chan time.Time {
 	return t.timer.C
 }
 
-func (t *defaultTimer) Start(duration time.Duration) {
+func (t *defaultTimer) Start(tick Tick) {
 	if t.timer == nil {
-		t.timer = time.NewTimer(duration)
+		t.timer = time.NewTimer(tick.Next)
 	} else {
-		t.timer.Reset(duration)
+		t.timer.Reset(tick.Next)
 	}
 }
 
