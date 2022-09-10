@@ -35,18 +35,25 @@ type defaultRetryer struct {
 	Timer           Timer
 }
 
-type RetryerConfig struct {
+type retryerConfig struct {
 	TicksCalculator TicksCalculator
 	Timer           Timer
 }
 
-// MustRetryer returns a new Retryer or panic if any dependency is nil.
-func MustRetryer(config RetryerConfig) Retryer {
+func mustDefaultRetryerWithDefaultTimer(config retryerConfig) Retryer {
+	return mustRetryer(retryerConfig{
+		TicksCalculator: config.TicksCalculator,
+		Timer:           &defaultTimer{},
+	})
+}
+
+// mustRetryer returns a new Retryer or panic if any dependency is nil.
+func mustRetryer(config retryerConfig) Retryer {
 	if config.Timer == nil {
-		panic("again: MustRetryer: nil Timer")
+		panic("again: mustRetryer: nil Timer")
 	}
 	if config.TicksCalculator == nil {
-		panic("again: MustRetryer: nil TicksCalculator")
+		panic("again: mustRetryer: nil TicksCalculator")
 	}
 	return defaultRetryer{
 		TicksCalculator: config.TicksCalculator,

@@ -23,7 +23,7 @@ func TestRetryer_Retry(t *testing.T) {
 			givenContext(givenCtx).
 			Returns(nil)
 
-		retrayer := again.MustRetryer(again.RetryerConfig{
+		retrayer := again.mustRetryer(again.retryerConfig{
 			TicksCalculator: singleTicksCalculator{},
 			Timer:           &instantTimer{},
 		})
@@ -46,7 +46,7 @@ func TestRetryer_Retry(t *testing.T) {
 			givenContext(givenCtx).
 			Returns(again.Permanent(errors.New("whatever")))
 
-		retrayer := again.MustRetryer(again.RetryerConfig{
+		retrayer := again.mustRetryer(again.retryerConfig{
 			TicksCalculator: singleTicksCalculator{},
 			Timer:           &instantTimer{},
 		})
@@ -66,7 +66,7 @@ func TestRetryer_Retry(t *testing.T) {
 			givenContext(givenCtx).
 			Returns(nil)
 
-		retrayer := again.MustRetryer(again.RetryerConfig{
+		retrayer := again.mustRetryer(again.retryerConfig{
 			TicksCalculator: infinityTicksCalculator{},
 			Timer:           &instantTimer{},
 		})
@@ -87,7 +87,7 @@ func TestRetryer_Retry(t *testing.T) {
 			givenContext(givenCtx).
 			Returns(nil)
 
-		retrayer := again.MustRetryer(again.RetryerConfig{
+		retrayer := again.mustRetryer(again.retryerConfig{
 			TicksCalculator: &twoTicksCalculator{},
 			Timer:           &instantTimer{},
 		})
@@ -109,7 +109,7 @@ func TestRetryer_Retry(t *testing.T) {
 			givenContext(givenCtx).
 			Returns(anyError)
 
-		retrayer := again.MustRetryer(again.RetryerConfig{
+		retrayer := again.mustRetryer(again.retryerConfig{
 			TicksCalculator: &twoTicksCalculator{},
 			Timer:           &instantTimer{},
 		})

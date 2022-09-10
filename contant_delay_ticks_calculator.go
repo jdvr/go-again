@@ -12,7 +12,7 @@ type constantDelayTicksCalculator struct {
 	clock   clock
 }
 
-func MustConstantDelayTicksCalculator(delay time.Duration, timeout time.Duration) TicksCalculator {
+func mustConstantDelayTicksCalculator(delay time.Duration, timeout time.Duration) TicksCalculator {
 	if delay == 0 || timeout == 0 {
 		panic("delay and timeout must be set")
 	}
