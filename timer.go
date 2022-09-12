@@ -1,10 +1,9 @@
 package again
 
-import "time"
-
-type clock interface {
-	Now() time.Time
-}
+import (
+	"github.com/jdvr/go-again/internal"
+	"time"
+)
 
 type systemClock struct{}
 
@@ -20,7 +19,7 @@ func (t *defaultTimer) Wait() <-chan time.Time {
 	return t.timer.C
 }
 
-func (t *defaultTimer) Start(tick Tick) {
+func (t *defaultTimer) Start(tick internal.Tick) {
 	if t.timer == nil {
 		t.timer = time.NewTimer(tick.Next)
 	} else {

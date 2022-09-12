@@ -1,4 +1,4 @@
-package again
+package internal
 
 import (
 	"math/rand"
@@ -17,6 +17,11 @@ const (
 	defaultMultiplier      = 1.5
 	defaultTimeout         = 1 * time.Minute
 )
+
+//clock is a time wrapper
+type clock interface {
+	Now() time.Time
+}
 
 // BackoffConfiguration Set values for backoff algorithm configurable parameters.
 type BackoffConfiguration struct {
@@ -43,8 +48,7 @@ type exponentialBackoffTicksCalculator struct {
 
 var _ TicksCalculator = &exponentialBackoffTicksCalculator{}
 
-func newExponentialBackoffTicksCalculator(configuration BackoffConfiguration) *exponentialBackoffTicksCalculator {
-	clock := systemClock{}
+func MustExponentialBackoffTicksCalculator(configuration BackoffConfiguration, clock clock) *exponentialBackoffTicksCalculator {
 	return &exponentialBackoffTicksCalculator{
 		Configuration: fillWithDefault(configuration),
 		startTime:     clock.Now(),

@@ -1,4 +1,4 @@
-package again
+package internal
 
 import (
 	"context"
@@ -35,25 +35,18 @@ type defaultRetryer struct {
 	Timer           Timer
 }
 
-type retryerConfig struct {
+type RetryerConfig struct {
 	TicksCalculator TicksCalculator
 	Timer           Timer
 }
 
-func mustDefaultRetryerWithDefaultTimer(config retryerConfig) Retryer {
-	return mustRetryer(retryerConfig{
-		TicksCalculator: config.TicksCalculator,
-		Timer:           &defaultTimer{},
-	})
-}
-
-// mustRetryer returns a new Retryer or panic if any dependency is nil.
-func mustRetryer(config retryerConfig) Retryer {
+// MustRetryer returns a new Retryer or panic if any dependency is nil.
+func MustRetryer(config RetryerConfig) Retryer {
 	if config.Timer == nil {
-		panic("again: mustRetryer: nil Timer")
+		panic("again: MustRetryer: nil Timer")
 	}
 	if config.TicksCalculator == nil {
-		panic("again: mustRetryer: nil TicksCalculator")
+		panic("again: MustRetryer: nil TicksCalculator")
 	}
 	return defaultRetryer{
 		TicksCalculator: config.TicksCalculator,

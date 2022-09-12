@@ -1,4 +1,4 @@
-package again
+package internal
 
 import (
 	"time"
@@ -12,12 +12,10 @@ type constantDelayTicksCalculator struct {
 	clock   clock
 }
 
-func mustConstantDelayTicksCalculator(delay time.Duration, timeout time.Duration) TicksCalculator {
+func MustConstantDelayTicksCalculator(delay time.Duration, timeout time.Duration, clock clock) TicksCalculator {
 	if delay == 0 || timeout == 0 {
 		panic("delay and timeout must be set")
 	}
-
-	clock := systemClock{}
 	return &constantDelayTicksCalculator{
 		delay:   delay,
 		timeout: timeout,

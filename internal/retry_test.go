@@ -1,19 +1,17 @@
-package again_test
+package internal_test
 
 import (
 	"context"
 	"errors"
+	"github.com/jdvr/go-again/internal"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
-
-	"github.com/jdvr/go-again"
 )
 
 func TestRetryer_Retry(t *testing.T) {
 	t.Parallel()
-
-	t.Run("stop if next tick includes stop flag", func(t *testing.T) {
+	t.Run("operation runs at least one time", func(t *testing.T) {
 		t.Parallel()
 
 		givenFakeOperation := NewFakeOperation(t)
@@ -23,7 +21,7 @@ func TestRetryer_Retry(t *testing.T) {
 			givenContext(givenCtx).
 			Returns(nil)
 
-		retrayer := again.mustRetryer(again.retryerConfig{
+		retrayer := internal.MustRetryer(internal.RetryerConfig{
 			TicksCalculator: singleTicksCalculator{},
 			Timer:           &instantTimer{},
 		})
@@ -33,7 +31,6 @@ func TestRetryer_Retry(t *testing.T) {
 		require.NoError(t, err)
 		givenFakeOperation.haveBeenCalled(1)
 	})
-
 	t.Run("stop if operation if error is permanent and return underlying error", func(t *testing.T) {
 		t.Parallel()
 
@@ -44,9 +41,9 @@ func TestRetryer_Retry(t *testing.T) {
 
 		givenFakeOperation.
 			givenContext(givenCtx).
-			Returns(again.Permanent(errors.New("whatever")))
+			Returns(internal.Permanent(errors.New("whatever")))
 
-		retrayer := again.mustRetryer(again.retryerConfig{
+		retrayer := internal.MustRetryer(internal.RetryerConfig{
 			TicksCalculator: singleTicksCalculator{},
 			Timer:           &instantTimer{},
 		})
@@ -66,7 +63,7 @@ func TestRetryer_Retry(t *testing.T) {
 			givenContext(givenCtx).
 			Returns(nil)
 
-		retrayer := again.mustRetryer(again.retryerConfig{
+		retrayer := internal.MustRetryer(internal.RetryerConfig{
 			TicksCalculator: infinityTicksCalculator{},
 			Timer:           &instantTimer{},
 		})
@@ -87,7 +84,7 @@ func TestRetryer_Retry(t *testing.T) {
 			givenContext(givenCtx).
 			Returns(nil)
 
-		retrayer := again.mustRetryer(again.retryerConfig{
+		retrayer := internal.MustRetryer(internal.RetryerConfig{
 			TicksCalculator: &twoTicksCalculator{},
 			Timer:           &instantTimer{},
 		})
@@ -109,7 +106,7 @@ func TestRetryer_Retry(t *testing.T) {
 			givenContext(givenCtx).
 			Returns(anyError)
 
-		retrayer := again.mustRetryer(again.retryerConfig{
+		retrayer := internal.MustRetryer(internal.RetryerConfig{
 			TicksCalculator: &twoTicksCalculator{},
 			Timer:           &instantTimer{},
 		})
@@ -128,7 +125,7 @@ func TestPermanentError(t *testing.T) {
 		t.Parallel()
 
 		givenError := errors.New("foo")
-		var permanentError error = again.Permanent(givenError)
+		var permanentError error = internal.Permanent(givenError)
 
 		unWrapped := errors.Unwrap(permanentError)
 
@@ -141,7 +138,7 @@ func TestPermanentError(t *testing.T) {
 		givenError := errors.New("given")
 		givenOtherError := errors.New("other")
 
-		var permanentError error = again.Permanent(givenError)
+		var permanentError error = internal.Permanent(givenError)
 
 		require.ErrorIs(t, permanentError, givenError)
 		require.NotErrorIs(t, permanentError, givenOtherError)
@@ -152,9 +149,9 @@ func TestPermanentError(t *testing.T) {
 
 		givenError := errors.New("given")
 
-		var permanentError error = again.Permanent(givenError)
+		var permanentError error = internal.Permanent(givenError)
 
-		var permanentRef *again.PermanentError
+		var permanentRef *internal.PermanentError
 
 		require.ErrorAs(t, permanentError, &permanentRef)
 	})
@@ -164,7 +161,7 @@ func TestPermanentError(t *testing.T) {
 
 		givenError := errors.New("given error")
 
-		var permanentError error = again.Permanent(givenError)
+		var permanentError error = internal.Permanent(givenError)
 
 		require.Equal(t, "given error", permanentError.Error())
 	})
@@ -174,7 +171,7 @@ type instantTimer struct {
 	timer *time.Timer
 }
 
-func (i *instantTimer) Start(_ again.Tick) {
+func (i *instantTimer) Start(_ internal.Tick) {
 	i.timer = time.NewTimer(1 * time.Nanosecond)
 }
 
@@ -191,16 +188,16 @@ func (i *instantTimer) Stop() {
 
 type singleTicksCalculator struct{}
 
-func (s singleTicksCalculator) Next() again.Tick {
-	return again.Tick{Next: -1, Stop: true}
+func (s singleTicksCalculator) Next() internal.Tick {
+	return internal.Tick{Next: -1, Stop: true}
 }
 
 func (s singleTicksCalculator) Reset() {}
 
 type infinityTicksCalculator struct{}
 
-func (s infinityTicksCalculator) Next() again.Tick {
-	return again.Tick{Next: 100 * time.Hour, Stop: false}
+func (s infinityTicksCalculator) Next() internal.Tick {
+	return internal.Tick{Next: 100 * time.Hour, Stop: false}
 }
 
 func (s infinityTicksCalculator) Reset() {}
@@ -209,12 +206,12 @@ type twoTicksCalculator struct {
 	called int
 }
 
-func (ticksCalculator *twoTicksCalculator) Next() again.Tick {
+func (ticksCalculator *twoTicksCalculator) Next() internal.Tick {
 	ticksCalculator.called += 1
 	if ticksCalculator.called == 2 {
-		return again.Tick{Next: 1 * time.Hour, Stop: true}
+		return internal.Tick{Next: 1 * time.Hour, Stop: true}
 	}
-	return again.Tick{Next: 1 * time.Millisecond, Stop: false}
+	return internal.Tick{Next: 1 * time.Millisecond, Stop: false}
 }
 
 func (ticksCalculator *twoTicksCalculator) Reset() {

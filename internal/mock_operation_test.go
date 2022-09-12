@@ -1,4 +1,4 @@
-package again_test
+package internal_test
 
 import (
 	"context"
@@ -12,12 +12,10 @@ type inputCall struct {
 }
 
 func (currentCall inputCall) Returns(err error) *FakeOperation {
-	expectedCalls := currentCall.fakeOperation.expectedCalls[currentCall.ctx]
-	expectedCalls = append(expectedCalls, call{
+	currentCall.fakeOperation.expectedCalls[currentCall.ctx] = call{
 		input:  currentCall.ctx,
 		result: err,
-	})
-	currentCall.fakeOperation.expectedCalls[currentCall.ctx] = expectedCalls
+	}
 	return currentCall.fakeOperation
 }
 
@@ -29,35 +27,20 @@ type FakeOperation struct {
 	t             *testing.T
 	times         int
 	called        []call
-	expectedCalls map[context.Context][]call
-	allowAnyCall  bool
+	expectedCalls map[context.Context]call
 }
 
 func NewFakeOperation(t *testing.T) *FakeOperation {
 	t.Helper()
 	return &FakeOperation{
 		t:             t,
-		expectedCalls: make(map[context.Context][]call),
+		expectedCalls: make(map[context.Context]call),
 	}
 }
 
 func (currentFakeOperator *FakeOperation) Run(context context.Context) error {
-	expectedCalls, ok := currentFakeOperator.expectedCalls[context]
-	require.True(
-		currentFakeOperator.t,
-		ok || currentFakeOperator.allowAnyCall,
-		"Unexpected call for FakeOperation",
-	)
-	expectedCall := call{
-		input:  context,
-		result: nil,
-	}
-	if !currentFakeOperator.allowAnyCall {
-		require.NotZero(currentFakeOperator.t, expectedCalls)
-		call := expectedCalls[0]
-		expectedCall = call
-		currentFakeOperator.expectedCalls[context] = expectedCalls[1:]
-	}
+	expectedCall, ok := currentFakeOperator.expectedCalls[context]
+	require.True(currentFakeOperator.t, ok, "Unexpected call for FakeOperation")
 	currentFakeOperator.called = append(currentFakeOperator.called, expectedCall)
 	currentFakeOperator.times += 1
 	return expectedCall.result
