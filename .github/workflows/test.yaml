@@ -15,16 +15,10 @@ concurrency:
 jobs:
   tests:
     name: Tests
-    runs-on: [ self-hosted, bear ]
+    runs-on: ubuntu-20.04
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v3
-      - name: Unit tests
-        run: make test-unit-docker
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-      - uses: actions/checkout@v3
 
       - uses: actions/setup-go@v3
         with:
