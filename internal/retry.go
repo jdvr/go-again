@@ -63,28 +63,32 @@ func (retryer defaultRetryer[T]) Retry(ctx context.Context, operation Operation[
 
 	retryer.TicksCalculator.Reset()
 	for {
-		value, err := operation.Run(ctx)
+		var (
+			value T
+			err   error
+		)
+		value, err = operation.Run(ctx)
 		if err == nil {
 			return value, nil
 		}
 
 		var permanent *PermanentError
 		if errors.As(err, &permanent) {
-			return nil, permanent.Err
+			return value, permanent.Err
 		}
 
 		if next = retryer.TicksCalculator.Next(); next.Stop {
 			if cerr := ctx.Err(); cerr != nil {
-				return nil, cerr
+				return value, cerr
 			}
-			return nil, err
+			return value, err
 		}
 
 		retryer.Timer.Start(next)
 
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return value, ctx.Err()
 		case <-retryer.Timer.Wait():
 		}
 	}

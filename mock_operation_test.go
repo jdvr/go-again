@@ -2,6 +2,7 @@ package again_test
 
 import (
 	"context"
+	"errors"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -52,7 +53,8 @@ func (currentFakeOperator *FakeOperation) Run(context context.Context) (int, err
 	)
 	expectedCall := call{
 		input: context,
-		err:   nil,
+		value: 23,
+		err:   errors.New("default err"),
 	}
 	if !currentFakeOperator.allowAnyCall {
 		require.NotZero(currentFakeOperator.t, expectedCalls)

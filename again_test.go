@@ -25,7 +25,7 @@ func TestWithExponentialBackoff(t *testing.T) {
 		})
 
 		_, err := retryer.Retry(context.Background(), givenOperation)
-		require.NoError(t, err)
+		require.Error(t, err)
 
 		givenOperation.haveBeenCalled(3)
 	})
@@ -43,7 +43,7 @@ func TestWithExponentialBackoff(t *testing.T) {
 		})
 
 		_, err := retryer.Retry(context.Background(), givenOperation)
-		require.NoError(t, err)
+		require.Error(t, err)
 
 		givenOperation.haveBeenCalled(3)
 	})
@@ -58,7 +58,7 @@ func TestWithConstantDelay(t *testing.T) {
 		retryer := again.WithConstantDelay[int](1*time.Millisecond, 3*time.Millisecond)
 
 		_, err := retryer.Retry(context.Background(), givenOperation)
-		require.NoError(t, err)
+		require.Error(t, err)
 
 		givenOperation.haveBeenCalled(4)
 	})

@@ -39,9 +39,14 @@ func WithCustomTicksCalculator[T any](calculator internal.TicksCalculator) inter
 func RetryOperation[T any](ctx context.Context, operation Operation[T]) (T, error) {
 	retryer := WithExponentialBackoff[T](internal.BackoffConfiguration{})
 
-	value, err := retryer.Retry(ctx, operation)
+	var (
+		value T
+		err   error
+	)
+
+	value, err = retryer.Retry(ctx, operation)
 	if err != nil {
-		return nil, err
+		return value, err
 	}
 
 	return value, nil
