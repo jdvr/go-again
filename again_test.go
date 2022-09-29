@@ -17,14 +17,14 @@ func TestWithExponentialBackoff(t *testing.T) {
 
 		givenOperation.allowAnyCall = true
 
-		retryer := again.WithExponentialBackoff(again.BackoffConfiguration{
+		retryer := again.WithExponentialBackoff[int](again.BackoffConfiguration{
 			InitialInterval:    10 * time.Millisecond,
 			MaxInterval:        50 * time.Millisecond,
 			IntervalMultiplier: 2,
 			Timeout:            20 * time.Millisecond,
 		})
 
-		err := retryer.Retry(context.Background(), givenOperation)
+		_, err := retryer.Retry(context.Background(), givenOperation)
 		require.NoError(t, err)
 
 		givenOperation.haveBeenCalled(3)
@@ -34,7 +34,7 @@ func TestWithExponentialBackoff(t *testing.T) {
 
 		givenOperation.allowAnyCall = true
 
-		retryer := again.WithExponentialBackoff(again.BackoffConfiguration{
+		retryer := again.WithExponentialBackoff[int](again.BackoffConfiguration{
 			InitialInterval:      10 * time.Millisecond,
 			MaxInterval:          50 * time.Millisecond,
 			IntervalMultiplier:   2,
@@ -42,7 +42,7 @@ func TestWithExponentialBackoff(t *testing.T) {
 			DisableRandomization: true,
 		})
 
-		err := retryer.Retry(context.Background(), givenOperation)
+		_, err := retryer.Retry(context.Background(), givenOperation)
 		require.NoError(t, err)
 
 		givenOperation.haveBeenCalled(3)
@@ -55,9 +55,9 @@ func TestWithConstantDelay(t *testing.T) {
 
 		givenOperation.allowAnyCall = true
 
-		retryer := again.WithConstantDelay(1*time.Millisecond, 3*time.Millisecond)
+		retryer := again.WithConstantDelay[int](1*time.Millisecond, 3*time.Millisecond)
 
-		err := retryer.Retry(context.Background(), givenOperation)
+		_, err := retryer.Retry(context.Background(), givenOperation)
 		require.NoError(t, err)
 
 		givenOperation.haveBeenCalled(4)
@@ -71,18 +71,18 @@ func TestRetryOperation(t *testing.T) {
 
 		givenOperation.
 			givenContext(testContext).
-			Returns(nil)
+			Returns(0, errors.New("no permanent"))
 
 		givenOperation.
 			givenContext(testContext).
-			Returns(nil)
+			Returns(0, errors.New("no permanent"))
 
 		expectedErr := errors.New("whatever")
 		givenOperation.
 			givenContext(testContext).
-			Returns(again.NewPermanentError(expectedErr))
+			Returns(0, again.NewPermanentError(expectedErr))
 
-		err := again.RetryOperation(testContext, givenOperation)
+		_, err := again.RetryOperation[int](testContext, givenOperation)
 		require.ErrorIs(t, err, expectedErr)
 
 		givenOperation.haveBeenCalled(3)
@@ -94,16 +94,16 @@ func TestRetry(t *testing.T) {
 		testContext := context.Background()
 		expectedErr := errors.New("whatever")
 		called := 0
-		givenFunc := func(ctx context.Context) error {
+		givenFunc := func(ctx context.Context) (bool, error) {
 			called++
 			if called > 3 {
-				return again.NewPermanentError(expectedErr)
+				return false, again.NewPermanentError(expectedErr)
 			}
 
-			return nil
+			return false, errors.New("whatever")
 		}
 
-		err := again.Retry(testContext, givenFunc)
+		_, err := again.Retry[bool](testContext, givenFunc)
 		require.ErrorIs(t, err, expectedErr)
 		require.Equal(t, 4, called)
 	})

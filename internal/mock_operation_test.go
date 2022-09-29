@@ -12,17 +12,19 @@ type inputCall struct {
 	fakeOperation *FakeOperation
 }
 
-func (currentCall inputCall) Returns(err error) *FakeOperation {
+func (currentCall inputCall) Returns(value int, err error) *FakeOperation {
 	currentCall.fakeOperation.expectedCalls[currentCall.ctx] = call{
-		input:  currentCall.ctx,
-		result: err,
+		input: currentCall.ctx,
+		value: value,
+		err:   err,
 	}
 	return currentCall.fakeOperation
 }
 
 type call struct {
-	input  context.Context
-	result error
+	input context.Context
+	value int
+	err   error
 }
 type FakeOperation struct {
 	t             *testing.T
@@ -39,12 +41,12 @@ func NewFakeOperation(t *testing.T) *FakeOperation {
 	}
 }
 
-func (currentFakeOperator *FakeOperation) Run(context context.Context) error {
+func (currentFakeOperator *FakeOperation) Run(context context.Context) (int, error) {
 	expectedCall, ok := currentFakeOperator.expectedCalls[context]
 	require.True(currentFakeOperator.t, ok, "Unexpected call for FakeOperation")
 	currentFakeOperator.called = append(currentFakeOperator.called, expectedCall)
 	currentFakeOperator.times += 1
-	return expectedCall.result
+	return expectedCall.value, expectedCall.err
 }
 
 func (currentFakeOperator *FakeOperation) givenContext(ctx context.Context) inputCall {

@@ -21,16 +21,17 @@ func TestRetryer_Retry(t *testing.T) {
 
 		givenFakeOperation.
 			givenContext(givenCtx).
-			Returns(nil)
+			Returns(7, nil)
 
-		retrayer := internal.MustRetryer(internal.RetryerConfig{
+		retrayer := internal.MustRetryer[int](internal.RetryerConfig{
 			TicksCalculator: singleTicksCalculator{},
 			Timer:           &instantTimer{},
 		})
 
-		err := retrayer.Retry(givenCtx, givenFakeOperation)
+		value, err := retrayer.Retry(givenCtx, givenFakeOperation)
 
 		require.NoError(t, err)
+		require.Equal(t, 7, value)
 		givenFakeOperation.haveBeenCalled(1)
 	})
 	t.Run("stop if operation if error is permanent and return underlying error", func(t *testing.T) {
@@ -43,14 +44,14 @@ func TestRetryer_Retry(t *testing.T) {
 
 		givenFakeOperation.
 			givenContext(givenCtx).
-			Returns(internal.Permanent(errors.New("whatever")))
+			Returns(0, internal.Permanent(errors.New("whatever")))
 
-		retrayer := internal.MustRetryer(internal.RetryerConfig{
+		retrayer := internal.MustRetryer[int](internal.RetryerConfig{
 			TicksCalculator: singleTicksCalculator{},
 			Timer:           &instantTimer{},
 		})
 
-		err := retrayer.Retry(givenCtx, givenFakeOperation)
+		_, err := retrayer.Retry(givenCtx, givenFakeOperation)
 
 		require.Equal(t, expectedError, err)
 		givenFakeOperation.haveBeenCalled(1)
@@ -63,17 +64,38 @@ func TestRetryer_Retry(t *testing.T) {
 
 		givenFakeOperation.
 			givenContext(givenCtx).
-			Returns(nil)
+			Returns(0, errors.New("ignored"))
 
-		retrayer := internal.MustRetryer(internal.RetryerConfig{
+		retrayer := internal.MustRetryer[int](internal.RetryerConfig{
 			TicksCalculator: infinityTicksCalculator{},
 			Timer:           &instantTimer{},
 		})
 
 		cancel()
-		err := retrayer.Retry(givenCtx, givenFakeOperation)
+		_, err := retrayer.Retry(givenCtx, givenFakeOperation)
 
 		require.Equal(t, context.Canceled, err)
+		givenFakeOperation.haveBeenCalled(1)
+	})
+	t.Run("stop whenever operation error is nil", func(t *testing.T) {
+		t.Parallel()
+
+		givenFakeOperation := NewFakeOperation(t)
+		givenCtx := context.Background()
+
+		givenFakeOperation.
+			givenContext(givenCtx).
+			Returns(123, nil)
+
+		retrayer := internal.MustRetryer[int](internal.RetryerConfig{
+			TicksCalculator: infinityTicksCalculator{},
+			Timer:           &instantTimer{},
+		})
+
+		value, err := retrayer.Retry(givenCtx, givenFakeOperation)
+
+		require.Equal(t, 123, value)
+		require.NoError(t, err)
 		givenFakeOperation.haveBeenCalled(1)
 	})
 	t.Run("operation is executed while ticks are returned", func(t *testing.T) {
@@ -84,16 +106,16 @@ func TestRetryer_Retry(t *testing.T) {
 
 		givenFakeOperation.
 			givenContext(givenCtx).
-			Returns(nil)
+			Returns(0, errors.New("any"))
 
-		retrayer := internal.MustRetryer(internal.RetryerConfig{
+		retrayer := internal.MustRetryer[int](internal.RetryerConfig{
 			TicksCalculator: &twoTicksCalculator{},
 			Timer:           &instantTimer{},
 		})
 
-		err := retrayer.Retry(givenCtx, givenFakeOperation)
+		_, err := retrayer.Retry(givenCtx, givenFakeOperation)
 
-		require.NoError(t, err)
+		require.Error(t, err)
 		givenFakeOperation.haveBeenCalled(2)
 	})
 	t.Run("operation is executed while ticks are returned event with error", func(t *testing.T) {
@@ -106,14 +128,14 @@ func TestRetryer_Retry(t *testing.T) {
 
 		givenFakeOperation.
 			givenContext(givenCtx).
-			Returns(anyError)
+			Returns(0, anyError)
 
-		retrayer := internal.MustRetryer(internal.RetryerConfig{
+		retrayer := internal.MustRetryer[int](internal.RetryerConfig{
 			TicksCalculator: &twoTicksCalculator{},
 			Timer:           &instantTimer{},
 		})
 
-		err := retrayer.Retry(givenCtx, givenFakeOperation)
+		_, err := retrayer.Retry(givenCtx, givenFakeOperation)
 
 		require.ErrorIs(t, err, anyError)
 		givenFakeOperation.haveBeenCalled(2)

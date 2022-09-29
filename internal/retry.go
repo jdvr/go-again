@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-type Operation interface {
-	Run(context context.Context) error
+type Operation[T any] interface {
+	Run(context context.Context) (T, error)
 }
 
 type Tick struct {
@@ -26,11 +26,11 @@ type TicksCalculator interface {
 	Reset()
 }
 
-type Retryer interface {
-	Retry(ctx context.Context, operation Operation) error
+type Retryer[T any] interface {
+	Retry(ctx context.Context, operation Operation[T]) (T, error)
 }
 
-type defaultRetryer struct {
+type defaultRetryer[T any] struct {
 	TicksCalculator TicksCalculator
 	Timer           Timer
 }
@@ -41,20 +41,20 @@ type RetryerConfig struct {
 }
 
 // MustRetryer returns a new Retryer or panic if any dependency is nil.
-func MustRetryer(config RetryerConfig) Retryer {
+func MustRetryer[T any](config RetryerConfig) Retryer[T] {
 	if config.Timer == nil {
 		panic("again: MustRetryer: nil Timer")
 	}
 	if config.TicksCalculator == nil {
 		panic("again: MustRetryer: nil TicksCalculator")
 	}
-	return defaultRetryer{
+	return defaultRetryer[T]{
 		TicksCalculator: config.TicksCalculator,
 		Timer:           config.Timer,
 	}
 }
 
-func (retryer defaultRetryer) Retry(ctx context.Context, operation Operation) error {
+func (retryer defaultRetryer[T]) Retry(ctx context.Context, operation Operation[T]) (T, error) {
 	var next Tick
 
 	defer func() {
@@ -63,25 +63,28 @@ func (retryer defaultRetryer) Retry(ctx context.Context, operation Operation) er
 
 	retryer.TicksCalculator.Reset()
 	for {
-		err := operation.Run(ctx)
+		value, err := operation.Run(ctx)
+		if err == nil {
+			return value, nil
+		}
 
 		var permanent *PermanentError
 		if errors.As(err, &permanent) {
-			return permanent.Err
+			return nil, permanent.Err
 		}
 
 		if next = retryer.TicksCalculator.Next(); next.Stop {
 			if cerr := ctx.Err(); cerr != nil {
-				return cerr
+				return nil, cerr
 			}
-			return err
+			return nil, err
 		}
 
 		retryer.Timer.Start(next)
 
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return nil, ctx.Err()
 		case <-retryer.Timer.Wait():
 		}
 	}
