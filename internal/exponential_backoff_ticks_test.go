@@ -1,9 +1,10 @@
 package internal
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestExponentialBackoffTicksCalculator_Next(t *testing.T) {

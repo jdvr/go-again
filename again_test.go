@@ -3,10 +3,12 @@ package again_test
 import (
 	"context"
 	"errors"
-	"github.com/jdvr/go-again"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/jdvr/go-again"
 )
 
 func TestWithExponentialBackoff(t *testing.T) {

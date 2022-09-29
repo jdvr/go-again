@@ -3,10 +3,12 @@ package internal_test
 import (
 	"context"
 	"errors"
-	"github.com/jdvr/go-again/internal"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/jdvr/go-again/internal"
 )
 
 func TestRetryer_Retry(t *testing.T) {
