@@ -65,8 +65,8 @@ func main() {
 
 	fmt.Printf("Finished with response %v\n", apiResponse)
 }
-
 ```
+
 ## Call database keeping a constant delay
 ```go
 package main
